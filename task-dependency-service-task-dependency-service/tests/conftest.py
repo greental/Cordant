@@ -30,6 +30,7 @@ class TestSettings:
     kafka_topic: str
     kafka_consumer_group: str
     max_dependency_depth: int
+    dependency_chain_depth_limit_enabled: bool
 
 
 @pytest.fixture
@@ -63,6 +64,10 @@ def test_settings(run_id: str, unique_test_topic: str, unique_consumer_group: st
         kafka_topic=os.getenv("KAFKA_TOPIC", unique_test_topic),
         kafka_consumer_group=os.getenv("KAFKA_CONSUMER_GROUP", unique_consumer_group),
         max_dependency_depth=int(os.getenv("MAX_DEPENDENCY_DEPTH", str(settings.max_dependency_depth or settings.dependency_chain_max_depth))),
+        dependency_chain_depth_limit_enabled=os.getenv(
+            "DEPENDENCY_CHAIN_DEPTH_LIMIT_ENABLED",
+            str(settings.dependency_chain_depth_limit_enabled),
+        ).lower() in {"1", "true", "yes", "on"},
     )
 
 
@@ -121,6 +126,7 @@ async def _make_api_client(test_settings: TestSettings, *, enable_kafka_consumer
         kafka_consumer_group=test_settings.kafka_consumer_group,
         enable_kafka_consumer=enable_kafka_consumer,
         dependency_chain_cache_enabled=cache_enabled,
+        dependency_chain_depth_limit_enabled=test_settings.dependency_chain_depth_limit_enabled,
         max_dependency_depth=test_settings.max_dependency_depth,
     )
     await app.router.startup()

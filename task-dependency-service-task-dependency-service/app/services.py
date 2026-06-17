@@ -14,10 +14,12 @@ class DependencyChainService:
         repository: TaskRepository = task_repository,
         cache: DependencyChainCache = dependency_chain_cache,
         max_depth: int = settings.max_dependency_depth or settings.dependency_chain_max_depth,
+        depth_limit_enabled: bool = settings.dependency_chain_depth_limit_enabled,
     ):
         self.repository = repository
         self.cache = cache
         self.max_depth = max_depth
+        self.depth_limit_enabled = depth_limit_enabled
 
     async def get_dependency_chain(self, task_id: str) -> DependencyChainResponse:
         result = await self.get_dependency_chain_result(task_id)
@@ -100,7 +102,7 @@ class DependencyChainService:
                 )
                 break
 
-            if len(chain) >= self.max_depth:
+            if self.depth_limit_enabled and len(chain) >= self.max_depth:
                 warnings.append(
                     DependencyWarning(
                         code="max_depth_exceeded",

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     kafka_consumer_group: str = "task-dependency-service"
     enable_kafka_consumer: bool = True
     dependency_chain_cache_enabled: bool = True
+    dependency_chain_depth_limit_enabled: bool = True
     dependency_chain_max_depth: int = 1000
     max_dependency_depth: int | None = None
     dependency_chain_cache_ttl_seconds: int = 60

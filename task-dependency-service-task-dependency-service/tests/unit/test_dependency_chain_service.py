@@ -58,11 +58,20 @@ class MemoryTaskRepository:
         return task
 
 
-async def service_with(tasks: list[Task], max_depth: int = 1000):
+async def service_with(
+    tasks: list[Task],
+    max_depth: int = 1000,
+    depth_limit_enabled: bool = True,
+):
     repository = MemoryTaskRepository()
     for task in tasks:
         await repository.upsert_task(task)
-    return DependencyChainService(repository=repository, cache=NoopCache(), max_depth=max_depth)
+    return DependencyChainService(
+        repository=repository,
+        cache=NoopCache(),
+        max_depth=max_depth,
+        depth_limit_enabled=depth_limit_enabled,
+    )
 
 
 async def repository_with(tasks: list[Task]) -> MemoryTaskRepository:
@@ -152,6 +161,19 @@ async def test_max_depth_stops_safely():
     assert [task.id for task in response.chain] == ["parent"]
     assert response.complete is False
     assert response.warnings[0].code == "max_depth_exceeded"
+
+
+@pytest.mark.asyncio
+async def test_depth_limit_can_be_disabled():
+    service = await service_with([
+        Task(id="root", title="Root"),
+        Task(id="parent", title="Parent", parent_task_id="root"),
+        Task(id="child", title="Child", parent_task_id="parent"),
+    ], max_depth=1, depth_limit_enabled=False)
+    response = await service.get_dependency_chain("child")
+    assert [task.id for task in response.chain] == ["parent", "root"]
+    assert response.complete is True
+    assert response.warnings == []
 
 
 @pytest.mark.asyncio

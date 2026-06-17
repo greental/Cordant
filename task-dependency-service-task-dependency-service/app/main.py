@@ -21,6 +21,7 @@ def create_app(
     kafka_consumer_group: str | None = None,
     enable_kafka_consumer: bool | None = None,
     dependency_chain_cache_enabled: bool | None = None,
+    dependency_chain_depth_limit_enabled: bool | None = None,
     max_dependency_depth: int | None = None,
 ) -> FastAPI:
     """Create the FastAPI app with injectable infrastructure settings.
@@ -57,6 +58,11 @@ def create_app(
         or settings.max_dependency_depth
         or settings.dependency_chain_max_depth
     )
+    effective_depth_limit_enabled = (
+        settings.dependency_chain_depth_limit_enabled
+        if dependency_chain_depth_limit_enabled is None
+        else dependency_chain_depth_limit_enabled
+    )
 
     mongo_client = AsyncIOMotorClient(effective_mongodb_url)
     collection = mongo_client[effective_mongodb_database]["tasks"]
@@ -71,6 +77,7 @@ def create_app(
         repository=repository,
         cache=cache,
         max_depth=effective_max_depth,
+        depth_limit_enabled=effective_depth_limit_enabled,
     )
     consumer = TaskEventConsumer(
         repository=repository,
